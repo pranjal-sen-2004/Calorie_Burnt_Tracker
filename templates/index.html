@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymIQ — Calories Burned Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --black: #0a0a0a;
+            --dark: #111318;
+            --card: #16191f;
+            --border: #252930;
+            --lime: #c8f135;
+            --lime-dim: #9fc22a;
+            --white: #f2f4f0;
+            --muted: #7a8290;
+            --red: #ff4d4d;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 48px;
+            border-bottom: 1px solid transparent;
+            transition: border-color .3s, background .3s;
+        }
+        nav.scrolled { background: rgba(10,10,10,.92); border-color: var(--border); backdrop-filter: blur(16px); }
+
+        .nav-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: .08em;
+            color: var(--lime);
+        }
+        .nav-logo span { color: var(--white); }
+
+        .nav-cta {
+            background: var(--lime);
+            color: var(--black);
+            font-weight: 700;
+            font-size: .85rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 10px 24px;
+            border-radius: 2px;
+            transition: background .2s, transform .15s;
+        }
+        .nav-cta:hover { background: var(--lime-dim); transform: translateY(-1px); }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            padding: 0 48px;
+            gap: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background grid lines */
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(200,241,53,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200,241,53,.04) 1px, transparent 1px);
+            background-size: 64px 64px;
+            pointer-events: none;
+        }
+
+        /* Radial glow */
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: -20%; left: -10%;
+            width: 70%; height: 90%;
+            background: radial-gradient(ellipse, rgba(200,241,53,.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-left { position: relative; z-index: 2; animation: fadeUp .9s ease both; }
+
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(200,241,53,.1);
+            border: 1px solid rgba(200,241,53,.25);
+            border-radius: 100px;
+            padding: 6px 16px;
+            font-size: .78rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin-bottom: 28px;
+        }
+        .hero-tag::before {
+            content: '';
+            width: 6px; height: 6px;
+            background: var(--lime);
+            border-radius: 50%;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3.5rem, 7vw, 6.5rem);
+            line-height: .95;
+            letter-spacing: .02em;
+            margin-bottom: 28px;
+        }
+        .hero-title .accent { color: var(--lime); display: block; }
+
+        .hero-desc {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--muted);
+            max-width: 440px;
+            margin-bottom: 44px;
+        }
+
+        .hero-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+        .btn-primary {
+            display: inline-block;
+            background: var(--lime);
+            color: var(--black);
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: .04em;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s;
+        }
+        .btn-primary::after {
+            content: '→';
+            margin-left: 10px;
+            display: inline-block;
+            transition: transform .2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-primary:hover::after { transform: translateX(4px); }
+
+        .btn-ghost {
+            color: var(--muted);
+            font-size: .9rem;
+            text-decoration: none;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 2px;
+            transition: color .2s, border-color .2s;
+        }
+        .btn-ghost:hover { color: var(--white); border-color: var(--muted); }
+
+        /* Hero right — visual */
+        .hero-right {
+            position: relative; z-index: 2;
+            display: flex; justify-content: center; align-items: center;
+            animation: fadeUp .9s .2s ease both;
+        }
+
+        .stat-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .25s, border-color .25s;
+        }
+        .stat-card:hover { transform: translateY(-4px); border-color: rgba(200,241,53,.3); }
+        .stat-card::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(200,241,53,.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .stat-card.large { grid-column: span 2; display: flex; align-items: center; gap: 20px; }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+        .stat-card.large .stat-icon { margin-bottom: 0; font-size: 2.5rem; flex-shrink: 0; }
+
+        .stat-label {
+            font-size: .72rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.4rem;
+            letter-spacing: .02em;
+            color: var(--lime);
+            line-height: 1;
+        }
+        .stat-card.large .stat-value { font-size: 3.2rem; }
+        .stat-sub { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+
+        /* ── FEATURES ── */
+        .features {
+            padding: 120px 48px;
+            position: relative;
+        }
+        .section-label {
+            font-size: .72rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(2.4rem, 4vw, 3.8rem);
+            letter-spacing: .03em;
+            margin-bottom: 64px;
+            max-width: 600px;
+        }
+        .section-title span { color: var(--lime); }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 36px 28px;
+            transition: transform .25s, border-color .25s;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity .6s ease, transform .6s ease, border-color .25s;
+        }
+        .feature-card.visible { opacity: 1; transform: translateY(0); }
+        .feature-card:hover { border-color: rgba(200,241,53,.3); }
+
+        .feature-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 4rem;
+            color: rgba(200,241,53,.12);
+            line-height: 1;
+            margin-bottom: 20px;
+        }
+        .feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
+        .feature-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; letter-spacing: .02em; }
+        .feature-desc { font-size: .88rem; color: var(--muted); line-height: 1.65; }
+
+        /* ── MODELS ── */
+        .models {
+            padding: 80px 48px 120px;
+            border-top: 1px solid var(--border);
+        }
+        .models-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 40px;
+        }
+        .model-chip {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 10px 22px;
+            font-size: .83rem;
+            letter-spacing: .04em;
+            color: var(--muted);
+            transition: background .2s, border-color .2s, color .2s;
+        }
+        .model-chip:hover, .model-chip.active {
+            background: rgba(200,241,53,.1);
+            border-color: rgba(200,241,53,.4);
+            color: var(--lime);
+        }
+
+        /* ── CTA STRIP ── */
+        .cta-strip {
+            margin: 0 48px 120px;
+            background: var(--lime);
+            border-radius: 12px;
+            padding: 64px 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            overflow: hidden;
+            position: relative;
+        }
+        .cta-strip::before {
+            content: 'PREDICT';
+            position: absolute;
+            right: -30px; top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 10rem;
+            color: rgba(0,0,0,.06);
+            letter-spacing: .04em;
+            pointer-events: none;
+            user-select: none;
+        }
+        .cta-strip-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            color: var(--black);
+            line-height: 1;
+            letter-spacing: .03em;
+        }
+        .cta-strip-desc { font-size: .9rem; color: rgba(0,0,0,.6); margin-top: 10px; }
+        .btn-dark {
+            flex-shrink: 0;
+            background: var(--black);
+            color: var(--lime);
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 18px 44px;
+            border-radius: 2px;
+            transition: background .2s;
+            white-space: nowrap;
+        }
+        .btn-dark:hover { background: #1a1a1a; }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: .08em;
+            color: var(--lime);
+        }
+        .footer-logo span { color: var(--muted); }
+        .footer-copy { font-size: .8rem; color: var(--muted); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { font-size: .8rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+        .footer-links a:hover { color: var(--white); }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: .5; transform: scale(1.5); }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            nav { padding: 18px 24px; }
+            .hero { grid-template-columns: 1fr; padding: 120px 24px 60px; min-height: auto; gap: 48px; }
+            .hero-right { justify-content: flex-start; }
+            .features { padding: 80px 24px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .models { padding: 60px 24px 80px; }
+            .cta-strip { margin: 0 24px 80px; padding: 48px 32px; flex-direction: column; align-items: flex-start; }
+            footer { padding: 32px 24px; flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="navbar">
+    <div class="nav-logo">Gym<span>IQ</span></div>
+    <a href="/predict" class="nav-cta">Start Prediction</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-left">
+        <div class="hero-tag">ML-Powered Fitness Analytics</div>
+        <h1 class="hero-title">
+            Know Your
+            <span class="accent">Burn.</span>
+        </h1>
+        <p class="hero-desc">
+            Enter your personal fitness metrics and let our machine learning model predict exactly how many calories you'll burn — before you even hit the gym.
+        </p>
+        <div class="hero-actions">
+            <a href="/predict" class="btn-primary">Start Prediction</a>
+            <a href="#features" class="btn-ghost">Learn how it works</a>
+        </div>
+    </div>
+
+    <div class="hero-right">
+        <div class="stat-card-grid">
+            <div class="stat-card large">
+                <div class="stat-icon">🔥</div>
+                <div>
+                    <div class="stat-label">Predicted Output</div>
+                    <div class="stat-value">547</div>
+                    <div class="stat-sub">Calories burned · Cardio session</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-label">Models Evaluated</div>
+                <div class="stat-value">8</div>
+                <div class="stat-sub">Best auto-selected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">Input Features</div>
+                <div class="stat-value">14</div>
+                <div class="stat-sub">Health metrics</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-label">Accuracy</div>
+                <div class="stat-value">R²</div>
+                <div class="stat-sub">Regression score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏋️</div>
+                <div class="stat-label">Workout Types</div>
+                <div class="stat-value">4+</div>
+                <div class="stat-sub">Cardio, Strength & more</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Three steps to your <span>prediction</span></h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-num">01</div>
+            <div class="feature-icon">📋</div>
+            <div class="feature-title">Enter Your Metrics</div>
+            <p class="feature-desc">Fill in 14 personal and workout-specific data points — from your age and BMI to heart rate zones and session duration.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-num">02</div>
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-title">ML Model Processes</div>
+            <p class="feature-desc">Our backend pipeline preprocesses your data using a trained scaler and encoder, then feeds it to the best-performing regression model.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-num">03</div>
+            <div class="feature-icon">🔥</div>
+            <div class="feature-title">Get Your Prediction</div>
+            <p class="feature-desc">Instantly receive a precise calorie burn estimate, helping you plan your nutrition and recovery accordingly.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-num">04</div>
+            <div class="feature-icon">🎯</div>
+            <div class="feature-title">High Accuracy</div>
+            <p class="feature-desc">Trained on real gym member data with models like Random Forest, XGBoost, and CatBoost — the best model is auto-selected for maximum accuracy.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-num">05</div>
+            <div class="feature-icon">📱</div>
+            <div class="feature-title">Works Everywhere</div>
+            <p class="feature-desc">Fully responsive design works seamlessly on desktop, tablet, or mobile — predict on the go, right from the gym floor.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-num">06</div>
+            <div class="feature-icon">🔄</div>
+            <div class="feature-title">Instant Reset</div>
+            <p class="feature-desc">Try different scenarios — modify your metrics and re-predict to see how changes in your workout intensity affect calorie output.</p>
+        </div>
+    </div>
+</section>
+
+<!-- MODELS -->
+<section class="models">
+    <div class="section-label">Under the Hood</div>
+    <h2 class="section-title">8 ML Models. <span>1 Winner.</span></h2>
+    <p style="color:var(--muted); max-width:520px; line-height:1.7; font-size:.95rem;">
+        Every time the model is trained, all 8 regression algorithms compete. The one with the highest R² score wins and gets deployed automatically.
+    </p>
+    <div class="models-row">
+        <div class="model-chip active">🏆 Random Forest</div>
+        <div class="model-chip">Gradient Boosting</div>
+        <div class="model-chip">XGBoost</div>
+        <div class="model-chip">CatBoost</div>
+        <div class="model-chip">SVR</div>
+        <div class="model-chip">Linear Regression</div>
+        <div class="model-chip">Decision Tree</div>
+        <div class="model-chip">AdaBoost</div>
+    </div>
+</section>
+
+<!-- CTA STRIP -->
+<div class="cta-strip">
+    <div>
+        <div class="cta-strip-title">Ready to find your burn?</div>
+        <div class="cta-strip-desc">It takes less than 60 seconds. No account needed.</div>
+    </div>
+    <a href="/predict" class="btn-dark">Start Prediction →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-logo">Gym<span>IQ</span></div>
+    <div class="footer-copy">© 2024 GymIQ · ML-Powered Calorie Prediction · Built with Flask & Scikit-learn</div>
+    <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/predict">Predict</a>
+    </div>
+</footer>
+
+<script>
+    // Navbar scroll effect
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // Scroll-reveal for feature cards
+    const cards = document.querySelectorAll('.feature-card');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => entry.target.classList.add('visible'), i * 100);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    cards.forEach(c => observer.observe(c));
+
+    // Model chips cycle
+    const chips = document.querySelectorAll('.model-chip');
+    let current = 0;
+    setInterval(() => {
+        chips[current].classList.remove('active');
+        current = (current + 1) % chips.length;
+        chips[current].classList.add('active');
+    }, 1800);
+</script>
+</body>
+</html>

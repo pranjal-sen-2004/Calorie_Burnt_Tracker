@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymIQ — Predict Calories</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --black: #0a0a0a;
+            --dark: #111318;
+            --card: #16191f;
+            --card2: #1c1f27;
+            --border: #252930;
+            --border2: #2e333d;
+            --lime: #c8f135;
+            --lime-dim: #9fc22a;
+            --lime-bg: rgba(200,241,53,.08);
+            --white: #f2f4f0;
+            --muted: #7a8290;
+            --error: #ff5555;
+            --error-bg: rgba(255,85,85,.1);
+            --success: #55d98a;
+            --success-bg: rgba(85,217,138,.1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 48px;
+            background: rgba(10,10,10,.92);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+        .nav-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: .08em;
+            color: var(--lime);
+            text-decoration: none;
+        }
+        .nav-logo span { color: var(--white); }
+        .nav-back {
+            color: var(--muted);
+            font-size: .85rem;
+            text-decoration: none;
+            letter-spacing: .04em;
+            transition: color .2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .nav-back:hover { color: var(--white); }
+
+        /* ── PAGE LAYOUT ── */
+        .page-wrapper {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 56px 24px 100px;
+        }
+
+        /* ── PAGE HEADER ── */
+        .page-header { margin-bottom: 48px; animation: fadeUp .6s ease both; }
+        .page-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--lime-bg);
+            border: 1px solid rgba(200,241,53,.2);
+            border-radius: 100px;
+            padding: 5px 14px;
+            font-size: .72rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--lime);
+            margin-bottom: 20px;
+        }
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(2.4rem, 5vw, 4rem);
+            letter-spacing: .03em;
+            line-height: .95;
+            margin-bottom: 14px;
+        }
+        .page-title span { color: var(--lime); }
+        .page-desc { color: var(--muted); font-size: .95rem; line-height: 1.65; max-width: 520px; }
+
+        /* ── SECTION ── */
+        .form-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            animation: fadeUp .6s ease both;
+        }
+        .form-section:nth-child(2) { animation-delay: .05s; }
+        .form-section:nth-child(3) { animation-delay: .10s; }
+        .form-section:nth-child(4) { animation-delay: .15s; }
+        .form-section:nth-child(5) { animation-delay: .20s; }
+
+        .section-header {
+            display: flex; align-items: center; gap: 14px;
+            padding: 22px 28px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card2);
+        }
+        .section-emoji { font-size: 1.3rem; line-height: 1; }
+        .section-title-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.15rem;
+            letter-spacing: .06em;
+            color: var(--white);
+        }
+        .section-sub { font-size: .75rem; color: var(--muted); margin-top: 1px; }
+
+        .section-body {
+            padding: 28px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .full { grid-column: span 2; }
+
+        /* ── FORM FIELDS ── */
+        .field { display: flex; flex-direction: column; gap: 8px; }
+
+        label {
+            font-size: .78rem;
+            font-weight: 500;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        label .req { color: var(--lime); margin-left: 2px; }
+
+        .input-wrap { position: relative; }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            background: var(--black);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 13px 16px;
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: .95rem;
+            font-weight: 300;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--lime);
+            box-shadow: 0 0 0 3px rgba(200,241,53,.12);
+        }
+        input[type="number"].error,
+        select.error {
+            border-color: var(--error);
+            box-shadow: 0 0 0 3px var(--error-bg);
+        }
+        input[type="number"]::placeholder { color: var(--muted); opacity: .6; }
+        select option { background: var(--card); color: var(--white); }
+
+        /* Custom select arrow */
+        .select-wrap { position: relative; }
+        .select-wrap::after {
+            content: '▾';
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: .8rem;
+            pointer-events: none;
+        }
+
+        /* Input hint */
+        .hint { font-size: .73rem; color: var(--muted); }
+        .field-error { font-size: .73rem; color: var(--error); display: none; }
+        .field-error.show { display: block; }
+
+        /* BMI badge */
+        .bmi-display {
+            background: var(--lime-bg);
+            border: 1px solid rgba(200,241,53,.2);
+            border-radius: 6px;
+            padding: 13px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            min-height: 48px;
+        }
+        .bmi-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.5rem;
+            color: var(--lime);
+        }
+        .bmi-label { font-size: .78rem; color: var(--muted); }
+        .bmi-category { font-size: .75rem; color: var(--lime); font-weight: 500; margin-top: 2px; }
+
+        /* Gender radio */
+        .radio-group { display: flex; gap: 12px; }
+        .radio-btn {
+            flex: 1;
+            position: relative;
+        }
+        .radio-btn input { display: none; }
+        .radio-btn label {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 13px;
+            background: var(--black);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: capitalize;
+            letter-spacing: .04em;
+            font-size: .9rem;
+            transition: border-color .2s, background .2s, color .2s;
+        }
+        .radio-btn input:checked + label {
+            border-color: var(--lime);
+            background: var(--lime-bg);
+            color: var(--lime);
+        }
+        .radio-btn label:hover { border-color: var(--border); }
+
+        /* Experience level */
+        .exp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .exp-btn { position: relative; }
+        .exp-btn input { display: none; }
+        .exp-btn label {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 12px 8px;
+            background: var(--black);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .72rem;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.4;
+            transition: border-color .2s, background .2s, color .2s;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .exp-btn label .exp-num {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            display: block;
+            color: var(--white);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .exp-btn input:checked + label {
+            border-color: var(--lime);
+            background: var(--lime-bg);
+            color: var(--lime);
+        }
+        .exp-btn input:checked + label .exp-num { color: var(--lime); }
+
+        /* ── ACTIONS ── */
+        .form-actions {
+            display: flex; gap: 16px; align-items: center;
+            margin-top: 12px;
+            animation: fadeUp .6s .25s ease both;
+        }
+        .btn-submit {
+            flex: 1;
+            background: var(--lime);
+            color: var(--black);
+            border: none;
+            border-radius: 6px;
+            padding: 16px 32px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            cursor: pointer;
+            transition: background .2s, transform .15s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-submit:hover { background: var(--lime-dim); transform: translateY(-2px); }
+        .btn-submit:active { transform: translateY(0); }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 16px 28px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+        .btn-reset:hover { border-color: var(--muted); color: var(--white); }
+
+        /* ── LOADING ── */
+        .loading-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(10,10,10,.85);
+            backdrop-filter: blur(8px);
+            align-items: center; justify-content: center;
+            flex-direction: column; gap: 20px;
+        }
+        .loading-overlay.show { display: flex; }
+        .spinner {
+            width: 52px; height: 52px;
+            border: 3px solid var(--border);
+            border-top-color: var(--lime);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        .loading-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: .1em;
+            color: var(--lime);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── RESULT CARD ── */
+        .result-card {
+            display: none;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+            text-align: center;
+            margin-top: 24px;
+            animation: scaleIn .5s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        .result-card.show { display: block; }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(.88); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .result-fire { font-size: 4rem; margin-bottom: 16px; }
+        .result-label {
+            font-size: .78rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .result-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(4rem, 10vw, 7rem);
+            letter-spacing: .02em;
+            color: var(--lime);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .result-unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+        .result-msg {
+            font-size: .95rem;
+            color: var(--muted);
+            line-height: 1.65;
+            max-width: 440px;
+            margin: 0 auto 36px;
+        }
+        .result-msg strong { color: var(--white); font-weight: 500; }
+
+        .result-bar-wrap {
+            background: var(--border);
+            border-radius: 100px;
+            height: 8px;
+            margin: 0 auto 36px;
+            max-width: 400px;
+            overflow: hidden;
+        }
+        .result-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--lime-dim), var(--lime));
+            border-radius: 100px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(.22,1,.36,1);
+        }
+
+        .result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn-again {
+            background: var(--lime);
+            color: var(--black);
+            border: none;
+            border-radius: 6px;
+            padding: 14px 32px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: .9rem;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .btn-again:hover { background: var(--lime-dim); }
+        .btn-home {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 14px 32px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .9rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color .2s, color .2s;
+        }
+        .btn-home:hover { border-color: var(--muted); color: var(--white); }
+
+        /* ── ERROR BANNER ── */
+        .error-banner {
+            display: none;
+            background: var(--error-bg);
+            border: 1px solid rgba(255,85,85,.25);
+            border-radius: 8px;
+            padding: 14px 20px;
+            color: var(--error);
+            font-size: .88rem;
+            margin-top: 12px;
+            animation: fadeUp .4s ease both;
+        }
+        .error-banner.show { display: flex; gap: 10px; align-items: flex-start; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            nav { padding: 16px 20px; }
+            .page-wrapper { padding: 36px 16px 80px; }
+            .section-body { grid-template-columns: 1fr; padding: 20px; }
+            .full { grid-column: span 1; }
+            .exp-grid { grid-template-columns: repeat(3, 1fr); }
+            .form-actions { flex-direction: column; }
+            .btn-submit, .btn-reset { width: 100%; }
+            .result-card { padding: 36px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <a href="/" class="nav-logo">Gym<span>IQ</span></a>
+    <a href="/" class="nav-back">← Back to Home</a>
+</nav>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Predicting…</div>
+</div>
+
+<div class="page-wrapper">
+
+    <!-- HEADER -->
+    <div class="page-header">
+        <div class="page-tag">🔥 Calorie Predictor</div>
+        <h1 class="page-title">Predict Your <span>Burn</span></h1>
+        <p class="page-desc">Fill in your fitness metrics below. Our ML model will estimate how many calories you'll burn in your session.</p>
+    </div>
+
+    <!-- FORM -->
+    <form id="predictForm" novalidate>
+
+        <!-- SECTION 1: Personal Info -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-emoji">👤</div>
+                <div>
+                    <div class="section-title-text">Personal Information</div>
+                    <div class="section-sub">Basic identity and body metrics</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Age -->
+                <div class="field">
+                    <label for="age">Age <span class="req">*</span></label>
+                    <input type="number" id="age" name="age" min="10" max="100" placeholder="e.g. 28" required>
+                    <span class="hint">Years (10 – 100)</span>
+                    <span class="field-error" id="age-err">Please enter a valid age (10–100)</span>
+                </div>
+
+                <!-- Gender -->
+                <div class="field">
+                    <label>Gender <span class="req">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-btn">
+                            <input type="radio" id="male" name="gender" value="Male" required>
+                            <label for="male">♂ Male</label>
+                        </div>
+                        <div class="radio-btn">
+                            <input type="radio" id="female" name="gender" value="Female">
+                            <label for="female">♀ Female</label>
+                        </div>
+                    </div>
+                    <span class="field-error" id="gender-err">Please select a gender</span>
+                </div>
+
+                <!-- Weight -->
+                <div class="field">
+                    <label for="weight">Weight (kg) <span class="req">*</span></label>
+                    <input type="number" id="weight" name="weight" min="30" max="250" step="0.1" placeholder="e.g. 75.5" required>
+                    <span class="hint">Kilograms (30 – 250)</span>
+                    <span class="field-error" id="weight-err">Please enter a valid weight</span>
+                </div>
+
+                <!-- Height -->
+                <div class="field">
+                    <label for="height">Height (m) <span class="req">*</span></label>
+                    <input type="number" id="height" name="height" min="1.0" max="2.5" step="0.01" placeholder="e.g. 1.75" required>
+                    <span class="hint">Metres (1.00 – 2.50)</span>
+                    <span class="field-error" id="height-err">Please enter a valid height</span>
+                </div>
+
+                <!-- BMI (auto-calculated) -->
+                <div class="field full">
+                    <label for="bmi">BMI — Body Mass Index <span class="req">*</span></label>
+                    <div class="bmi-display" id="bmiDisplay">
+                        <div>
+                            <div class="bmi-label">Enter height & weight to auto-calculate</div>
+                            <div class="bmi-category" id="bmiCategory">—</div>
+                        </div>
+                        <div class="bmi-value" id="bmiValue">—</div>
+                    </div>
+                    <input type="hidden" id="bmi" name="bmi">
+                    <span class="hint">Auto-calculated · Weight (kg) ÷ Height² (m). Override below if needed.</span>
+                    <input type="number" id="bmiManual" name="bmi_manual" min="10" max="60" step="0.01"
+                           placeholder="Or enter BMI manually (optional)" style="margin-top:8px">
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Heart Rate Metrics -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-emoji">❤️</div>
+                <div>
+                    <div class="section-title-text">Heart Rate Metrics</div>
+                    <div class="section-sub">BPM readings from your workout</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Max BPM -->
+                <div class="field">
+                    <label for="max_bpm">Max Heart Rate (BPM) <span class="req">*</span></label>
+                    <input type="number" id="max_bpm" name="max_bpm" min="80" max="220" placeholder="e.g. 165" required>
+                    <span class="hint">Beats per min at peak intensity</span>
+                    <span class="field-error" id="max_bpm-err">Enter value between 80–220</span>
+                </div>
+
+                <!-- Avg BPM -->
+                <div class="field">
+                    <label for="avg_bpm">Avg Heart Rate (BPM) <span class="req">*</span></label>
+                    <input type="number" id="avg_bpm" name="avg_bpm" min="50" max="200" placeholder="e.g. 130" required>
+                    <span class="hint">Average BPM during session</span>
+                    <span class="field-error" id="avg_bpm-err">Enter value between 50–200</span>
+                </div>
+
+                <!-- Resting BPM -->
+                <div class="field full">
+                    <label for="resting_bpm">Resting Heart Rate (BPM) <span class="req">*</span></label>
+                    <input type="number" id="resting_bpm" name="resting_bpm" min="30" max="120" placeholder="e.g. 65" required>
+                    <span class="hint">Your resting BPM (before workout) — 30 to 120</span>
+                    <span class="field-error" id="resting_bpm-err">Enter value between 30–120</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Workout Details -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-emoji">🏋️</div>
+                <div>
+                    <div class="section-title-text">Workout Details</div>
+                    <div class="section-sub">Session specifics and schedule</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Session Duration -->
+                <div class="field">
+                    <label for="session_duration">Session Duration (hrs) <span class="req">*</span></label>
+                    <input type="number" id="session_duration" name="session_duration" min="0.1" max="6" step="0.1" placeholder="e.g. 1.5" required>
+                    <span class="hint">Duration in hours (0.1 – 6.0)</span>
+                    <span class="field-error" id="session_duration-err">Enter duration between 0.1–6 hours</span>
+                </div>
+
+                <!-- Workout Type -->
+                <div class="field">
+                    <label for="workout_type">Workout Type <span class="req">*</span></label>
+                    <div class="select-wrap">
+                        <select id="workout_type" name="workout_type" required>
+                            <option value="" selected disabled>Select workout type</option>
+                            <option value="Cardio">🏃 Cardio</option>
+                            <option value="Strength">🏋️ Strength</option>
+                            <option value="Yoga">🧘 Yoga</option>
+                            <option value="HIIT">⚡ HIIT</option>
+                        </select>
+                    </div>
+                    <span class="field-error" id="workout_type-err">Please select a workout type</span>
+                </div>
+
+                <!-- Workout Frequency -->
+                <div class="field full">
+                    <label for="workout_frequency">Workout Frequency (days/week) <span class="req">*</span></label>
+                    <input type="number" id="workout_frequency" name="workout_frequency" min="1" max="7" placeholder="e.g. 4" required>
+                    <span class="hint">How many days per week do you train? (1 – 7)</span>
+                    <span class="field-error" id="workout_frequency-err">Enter value between 1–7</span>
+                </div>
+
+                <!-- Experience Level -->
+                <div class="field full">
+                    <label>Experience Level <span class="req">*</span></label>
+                    <div class="exp-grid">
+                        <div class="exp-btn">
+                            <input type="radio" id="exp1" name="experience_level" value="1" required>
+                            <label for="exp1"><span class="exp-num">1</span>Beginner</label>
+                        </div>
+                        <div class="exp-btn">
+                            <input type="radio" id="exp2" name="experience_level" value="2">
+                            <label for="exp2"><span class="exp-num">2</span>Novice</label>
+                        </div>
+                        <div class="exp-btn">
+                            <input type="radio" id="exp3" name="experience_level" value="3">
+                            <label for="exp3"><span class="exp-num">3</span>Intermediate</label>
+                        </div>
+                        <div class="exp-btn">
+                            <input type="radio" id="exp4" name="experience_level" value="4">
+                            <label for="exp4"><span class="exp-num">4</span>Advanced</label>
+                        </div>
+                        <div class="exp-btn">
+                            <input type="radio" id="exp5" name="experience_level" value="5">
+                            <label for="exp5"><span class="exp-num">5</span>Expert</label>
+                        </div>
+                    </div>
+                    <span class="field-error" id="experience_level-err">Please select an experience level</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Body Metrics -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-emoji">📊</div>
+                <div>
+                    <div class="section-title-text">Body Metrics</div>
+                    <div class="section-sub">Composition and hydration data</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Fat Percentage -->
+                <div class="field">
+                    <label for="fat_percentage">Fat Percentage (%) <span class="req">*</span></label>
+                    <input type="number" id="fat_percentage" name="fat_percentage" min="1" max="60" step="0.1" placeholder="e.g. 18.5" required>
+                    <span class="hint">Body fat % (1 – 60)</span>
+                    <span class="field-error" id="fat_percentage-err">Enter a valid fat % (1–60)</span>
+                </div>
+
+                <!-- Water Intake -->
+                <div class="field">
+                    <label for="water_intake">Water Intake (liters) <span class="req">*</span></label>
+                    <input type="number" id="water_intake" name="water_intake" min="0.1" max="10" step="0.1" placeholder="e.g. 2.5" required>
+                    <span class="hint">Water consumed during session</span>
+                    <span class="field-error" id="water_intake-err">Enter value between 0.1–10 L</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="form-actions">
+            <button type="submit" class="btn-submit" id="submitBtn">
+                🔥 Predict Calories Burned
+            </button>
+            <button type="button" class="btn-reset" id="resetBtn">Reset</button>
+        </div>
+
+        <!-- ERROR BANNER -->
+        <div class="error-banner" id="errorBanner">
+            <span>⚠</span>
+            <span id="errorMsg">Something went wrong. Please check your inputs and try again.</span>
+        </div>
+    </form>
+
+    <!-- RESULT CARD -->
+    <div class="result-card" id="resultCard">
+        <div class="result-fire">🔥</div>
+        <div class="result-label">Estimated Calories Burned</div>
+        <div class="result-value" id="resultValue">—</div>
+        <div class="result-unit">kcal</div>
+        <p class="result-msg" id="resultMsg">
+            Based on your metrics, you will burn approximately <strong id="resultStrong">—</strong> calories during this session.
+        </p>
+        <div class="result-bar-wrap">
+            <div class="result-bar" id="resultBar"></div>
+        </div>
+        <div class="result-actions">
+            <button type="button" class="btn-again" id="predictAgainBtn">🔄 Predict Again</button>
+            <a href="/" class="btn-home">🏠 Go Home</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    // ── BMI Auto-calculation ──
+    const heightEl = document.getElementById('height');
+    const weightEl = document.getElementById('weight');
+    const bmiVal   = document.getElementById('bmi');
+    const bmiDisplay = document.getElementById('bmiValue');
+    const bmiCat     = document.getElementById('bmiCategory');
+    const bmiManual  = document.getElementById('bmiManual');
+
+    function calcBMI() {
+        const h = parseFloat(heightEl.value);
+        const w = parseFloat(weightEl.value);
+        if (h > 0 && w > 0) {
+            const bmi = (w / (h * h)).toFixed(1);
+            bmiDisplay.textContent = bmi;
+            bmiVal.value = bmiManual.value || bmi;
+            if      (bmi < 18.5) { bmiCat.textContent = 'Underweight'; bmiCat.style.color = '#f0a500'; }
+            else if (bmi < 25)   { bmiCat.textContent = 'Normal weight'; bmiCat.style.color = 'var(--lime)'; }
+            else if (bmi < 30)   { bmiCat.textContent = 'Overweight'; bmiCat.style.color = '#f0a500'; }
+            else                 { bmiCat.textContent = 'Obese'; bmiCat.style.color = 'var(--error)'; }
+        } else {
+            bmiDisplay.textContent = '—';
+            bmiCat.textContent = '—';
+        }
+    }
+    heightEl.addEventListener('input', calcBMI);
+    weightEl.addEventListener('input', calcBMI);
+    bmiManual.addEventListener('input', () => {
+        if (bmiManual.value) bmiVal.value = bmiManual.value;
+        else calcBMI();
+    });
+
+    // ── Validation ──
+    const rules = {
+        age:               { min: 10, max: 100, required: true },
+        weight:            { min: 30, max: 250, required: true },
+        height:            { min: 1.0, max: 2.5, required: true },
+        max_bpm:           { min: 80, max: 220, required: true },
+        avg_bpm:           { min: 50, max: 200, required: true },
+        resting_bpm:       { min: 30, max: 120, required: true },
+        session_duration:  { min: 0.1, max: 6, required: true },
+        workout_frequency: { min: 1, max: 7, required: true },
+        fat_percentage:    { min: 1, max: 60, required: true },
+        water_intake:      { min: 0.1, max: 10, required: true },
+    };
+
+    function validateField(id) {
+        const el  = document.getElementById(id);
+        const err = document.getElementById(id + '-err');
+        if (!el || !err) return true;
+        const v = parseFloat(el.value);
+        const r = rules[id];
+        let valid = true;
+        if (r.required && !el.value.trim()) valid = false;
+        if (!isNaN(v) && r && (v < r.min || v > r.max)) valid = false;
+        el.classList.toggle('error', !valid);
+        err.classList.toggle('show', !valid);
+        return valid;
+    }
+
+    Object.keys(rules).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('blur', () => validateField(id));
+    });
+
+    function validateAll() {
+        let ok = true;
+        Object.keys(rules).forEach(id => { if (!validateField(id)) ok = false; });
+
+        // Gender
+        const genderChecked = document.querySelector('input[name="gender"]:checked');
+        const genderErr = document.getElementById('gender-err');
+        if (!genderChecked) { genderErr.classList.add('show'); ok = false; }
+        else genderErr.classList.remove('show');
+
+        // Workout type
+        const wt = document.getElementById('workout_type');
+        const wtErr = document.getElementById('workout_type-err');
+        if (!wt.value) { wt.classList.add('error'); wtErr.classList.add('show'); ok = false; }
+        else { wt.classList.remove('error'); wtErr.classList.remove('show'); }
+
+        // Experience level
+        const expChecked = document.querySelector('input[name="experience_level"]:checked');
+        const expErr = document.getElementById('experience_level-err');
+        if (!expChecked) { expErr.classList.add('show'); ok = false; }
+        else expErr.classList.remove('show');
+
+        // BMI
+        if (!bmiVal.value && !bmiManual.value) { calcBMI(); }
+        if (!bmiVal.value) ok = false;
+
+        return ok;
+    }
+
+    // ── Submit ──
+    const form      = document.getElementById('predictForm');
+    const loading   = document.getElementById('loadingOverlay');
+    const resultCard = document.getElementById('resultCard');
+    const errorBanner = document.getElementById('errorBanner');
+    const errorMsg  = document.getElementById('errorMsg');
+
+    form.addEventListener('submit', async function (e) {
+
+    e.preventDefault();
+
+    errorBanner.classList.remove('show');
+
+    if (!validateAll()) {
+
+        errorMsg.textContent =
+            'Please fix the highlighted fields before submitting.';
+
+        errorBanner.classList.add('show');
+
+        return;
+    }
+
+    loading.classList.add('show');
+
+    document.getElementById('submitBtn').disabled = true;
+
+    try {
+
+        const formData = new FormData(form);
+
+        if (bmiManual.value) {
+            formData.set('bmi', bmiManual.value);
+        } else {
+            formData.set('bmi', bmiVal.value);
+        }
+
+        const response = await fetch('/predict', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Server response failed');
+        }
+
+        const data = await response.json();
+
+        console.log(data);
+
+        if (data.prediction !== undefined) {
+
+            showResult(data.prediction);
+
+        } else {
+
+            throw new Error(data.error || 'Prediction failed');
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        errorMsg.textContent =
+            error.message || 'Prediction request failed.';
+
+        errorBanner.classList.add('show');
+
+    } finally {
+
+        loading.classList.remove('show');
+
+        document.getElementById('submitBtn').disabled = false;
+    }
+});
+
+    function showResult(value) {
+
+    const resultValue = document.getElementById('resultValue');
+    const resultMsg   = document.getElementById('resultMsg');
+    const resultBar   = document.getElementById('resultBar');
+
+    resultCard.classList.remove('show');
+
+    resultBar.style.transition = 'none';
+    resultBar.style.width = '0%';
+
+    const rounded = Math.round(value);
+
+    resultValue.textContent = rounded.toLocaleString();
+
+    resultMsg.innerHTML =
+        `Based on your fitness metrics, you will burn approximately <strong>${rounded.toLocaleString()} kcal</strong> during this session. Keep pushing! 💪`;
+
+    requestAnimationFrame(() => {
+
+        resultCard.classList.add('show');
+
+        setTimeout(() => {
+
+            resultBar.style.transition =
+                'width 1.2s cubic-bezier(.22,1,.36,1)';
+
+            const pct = Math.min((rounded / 1000) * 100, 100);
+
+            resultBar.style.width = pct + '%';
+
+        }, 50);
+    });
+}
+
+    // ── Predict Again ──
+    document.getElementById('predictAgainBtn').addEventListener('click', () => {
+        resultCard.classList.remove('show');
+        document.getElementById('resultBar').style.width = '0%';
+        window.scrollTo(0, 0);
+    });
+
+    // ── Reset ──
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        form.reset();
+        bmiDisplay.textContent = '—';
+        bmiCat.textContent = '—';
+        bmiVal.value = '';
+        resultCard.classList.remove('show');
+        errorBanner.classList.remove('show');
+        document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+        document.querySelectorAll('.field-error.show').forEach(el => el.classList.remove('show'));
+        window.scrollTo(0, 0);
+    });
+})();
+</script>
+</body>
+</html>
